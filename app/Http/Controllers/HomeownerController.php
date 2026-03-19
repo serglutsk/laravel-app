@@ -13,21 +13,18 @@ class HomeownerController extends Controller
         private readonly ProcessCsvFileAction $csvProcessor
     ) {}
 
-
-        public function index(): View
-        {
-            $data = [];
-            if (session()->has('results')) {
-                $data['results'] = session('results');
-            }
-            if (session()->has('success')) {
-                $data['success'] = session('success');
-            }
-
-            return view('parser.index', $data);
+    public function index(): View
+    {
+        $data = [];
+        if (session()->has('results')) {
+            $data['results'] = session('results');
+        }
+        if (session()->has('success')) {
+            $data['success'] = session('success');
         }
 
-
+        return view('parser.index', $data);
+    }
 
     /**
      * Process the uploaded CSV file.
@@ -35,12 +32,12 @@ class HomeownerController extends Controller
     public function upload(UploadCsvRequest $request): RedirectResponse
     {
         $results = $this->csvProcessor->execute($request->file('file'));
-        
+
         // Convert DTOs to serializable arrays
         $serializedResults = $results
             ->map(fn ($dto) => $dto->jsonSerialize())
             ->toArray();
-        
+
         return redirect()
             ->route('names.index')
             ->with([

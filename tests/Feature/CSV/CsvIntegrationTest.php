@@ -16,7 +16,7 @@ class CsvIntegrationTest extends TestCase
     {
         parent::setUp();
         $this->action = new ProcessCsvFileAction(
-            new NameParserService()
+            new NameParserService
         );
     }
 
@@ -24,7 +24,7 @@ class CsvIntegrationTest extends TestCase
     {
         Storage::fake('local');
 
-        $csvContent = <<<CSV
+        $csvContent = <<<'CSV'
 homeowner
 Mr John Smith
 Mrs Jane Smith
@@ -46,7 +46,7 @@ CSV;
         $file = UploadedFile::fake()->createWithContent('homeowners.csv', $csvContent);
 
         $result = $this->action->execute($file)
-            ->map(fn($dto) => $dto->jsonSerialize())
+            ->map(fn ($dto) => $dto->jsonSerialize())
             ->toArray();
 
         // Should parse multiple individuals
@@ -78,7 +78,7 @@ CSV;
     {
         Storage::fake('local');
 
-        $csvContent = <<<CSV
+        $csvContent = <<<'CSV'
 Name
 Mr and Mrs Smith
 Dr & Mrs Joe Bloggs
@@ -88,7 +88,7 @@ CSV;
         $file = UploadedFile::fake()->createWithContent('multi.csv', $csvContent);
 
         $result = $this->action->execute($file)
-            ->map(fn($dto) => $dto->jsonSerialize())
+            ->map(fn ($dto) => $dto->jsonSerialize())
             ->toArray();
 
         // Should parse at least 5 individuals (2+2+2)
@@ -99,7 +99,7 @@ CSV;
     {
         Storage::fake('local');
 
-        $csvContent = <<<CSV
+        $csvContent = <<<'CSV'
 Name
 Mr John Smith
 Mrs Jane Smith
@@ -113,7 +113,7 @@ CSV;
         $file = UploadedFile::fake()->createWithContent('titles.csv', $csvContent);
 
         $result = $this->action->execute($file)
-            ->map(fn($dto) => $dto->jsonSerialize())
+            ->map(fn ($dto) => $dto->jsonSerialize())
             ->toArray();
 
         $this->assertCount(7, $result);
@@ -138,7 +138,7 @@ CSV;
     {
         Storage::fake('local');
 
-        $csvContent = <<<CSV
+        $csvContent = <<<'CSV'
 Name
 Mr P Gunn
 Mr F. Fredrickson
@@ -149,7 +149,7 @@ CSV;
         $file = UploadedFile::fake()->createWithContent('initials.csv', $csvContent);
 
         $result = $this->action->execute($file)
-            ->map(fn($dto) => $dto->jsonSerialize())
+            ->map(fn ($dto) => $dto->jsonSerialize())
             ->toArray();
 
         $this->assertCount(4, $result);
@@ -169,7 +169,7 @@ CSV;
     {
         Storage::fake('local');
 
-        $csvContent = <<<CSV
+        $csvContent = <<<'CSV'
 Name
 Mrs Faye Hughes-Eastwood
 Mr John Smith-Jones
@@ -179,7 +179,7 @@ CSV;
         $file = UploadedFile::fake()->createWithContent('complex.csv', $csvContent);
 
         $result = $this->action->execute($file)
-            ->map(fn($dto) => $dto->jsonSerialize())
+            ->map(fn ($dto) => $dto->jsonSerialize())
             ->toArray();
 
         $this->assertCount(3, $result);
@@ -195,7 +195,7 @@ CSV;
     public function test_process_csv_file_upload(): void
     {
         $response = $this->post(route('names.upload'), [
-            'file' => UploadedFile::fake()->createWithContent('homeowners.csv', <<<CSV
+            'file' => UploadedFile::fake()->createWithContent('homeowners.csv', <<<'CSV'
 homeowner
 Mr John Smith
 Mrs Jane Smith

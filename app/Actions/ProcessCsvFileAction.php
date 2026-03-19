@@ -21,6 +21,7 @@ class ProcessCsvFileAction
     public function execute(UploadedFile $file): LazyCollection
     {
         $path = $file->getRealPath();
+
         return LazyCollection::make(function () use ($path) {
             $handle = fopen($path, 'r');
 
@@ -33,7 +34,7 @@ class ProcessCsvFileAction
 
             try {
                 while (($row = fgetcsv($handle)) !== false) {
-                    if (!isset($row[0]) || trim($row[0]) === '') {
+                    if (! isset($row[0]) || trim($row[0]) === '') {
                         continue;
                     }
 

@@ -16,7 +16,7 @@ class ProcessCsvFileActionTest extends TestCase
     {
         parent::setUp();
         $this->action = new ProcessCsvFileAction(
-            new NameParserService()
+            new NameParserService
         );
     }
 
@@ -28,7 +28,7 @@ class ProcessCsvFileActionTest extends TestCase
         $file = UploadedFile::fake()->createWithContent('names.csv', $csvContent);
 
         $result = $this->action->execute($file)
-            ->map(fn($dto) => $dto->jsonSerialize())
+            ->map(fn ($dto) => $dto->jsonSerialize())
             ->toArray();
 
         $this->assertCount(2, $result);
@@ -42,7 +42,7 @@ class ProcessCsvFileActionTest extends TestCase
         $file = UploadedFile::fake()->createWithContent('names.csv', $csvContent);
 
         $result = $this->action->execute($file)
-            ->map(fn($dto) => $dto->jsonSerialize())
+            ->map(fn ($dto) => $dto->jsonSerialize())
             ->toArray();
 
         $this->assertGreaterThanOrEqual(2, count($result));
@@ -56,7 +56,7 @@ class ProcessCsvFileActionTest extends TestCase
         $file = UploadedFile::fake()->createWithContent('names.csv', $csvContent);
 
         $result = $this->action->execute($file)
-            ->map(fn($dto) => $dto->jsonSerialize())
+            ->map(fn ($dto) => $dto->jsonSerialize())
             ->toArray();
 
         $this->assertCount(2, $result);
@@ -69,7 +69,7 @@ class ProcessCsvFileActionTest extends TestCase
         $file = UploadedFile::fake()->createWithContent('names.csv', '');
 
         $result = $this->action->execute($file)
-            ->map(fn($dto) => $dto->jsonSerialize())
+            ->map(fn ($dto) => $dto->jsonSerialize())
             ->toArray();
 
         $this->assertCount(0, $result);
@@ -96,7 +96,7 @@ class ProcessCsvFileActionTest extends TestCase
         $file = UploadedFile::fake()->createWithContent('names.csv', $csvContent);
 
         $result = $this->action->execute($file)
-            ->map(fn($dto) => $dto->jsonSerialize())
+            ->map(fn ($dto) => $dto->jsonSerialize())
             ->toArray();
 
         $dto = $result[0];
@@ -110,7 +110,7 @@ class ProcessCsvFileActionTest extends TestCase
     {
         Storage::fake('local');
 
-        $csvContent = <<<CSV
+        $csvContent = <<<'CSV'
 Name
 Mr John Smith
 Mrs Jane Smith
@@ -121,7 +121,7 @@ CSV;
         $file = UploadedFile::fake()->createWithContent('names.csv', $csvContent);
 
         $result = $this->action->execute($file)
-            ->map(fn($dto) => $dto->jsonSerialize())
+            ->map(fn ($dto) => $dto->jsonSerialize())
             ->toArray();
 
         $this->assertCount(4, $result);
@@ -139,9 +139,8 @@ CSV;
 
         // Verify it's actually lazy (toArray should be callable)
         $evaluated = $result
-            ->map(fn($dto) => $dto->jsonSerialize())
+            ->map(fn ($dto) => $dto->jsonSerialize())
             ->toArray();
         $this->assertCount(2, $evaluated);
     }
 }
-

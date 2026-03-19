@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeownerController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------

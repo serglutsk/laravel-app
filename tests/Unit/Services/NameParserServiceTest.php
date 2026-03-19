@@ -13,7 +13,7 @@ class NameParserServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->parserService = new NameParserService();
+        $this->parserService = new NameParserService;
     }
 
     public function test_parse_single_person_with_title_and_last_name(): void
