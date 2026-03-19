@@ -56,10 +56,10 @@
                     <tbody class="divide-y divide-gray-200">
                         @foreach($results as $dto)
                             <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 text-sm text-gray-900">{{ $dto->title ?? '—' }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-900">{{ $dto->first_name ?? '—' }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-900">{{ $dto->initial ?? '—' }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ $dto->last_name }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900">{{ $dto['title'] ?? '—' }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900">{{ $dto['first_name'] ?? '—' }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900">{{ $dto['initial'] ?? '—' }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ $dto['last_name'] ?? '—' }}</td>
                             </tr>
                         @endforeach
                     </tbody>

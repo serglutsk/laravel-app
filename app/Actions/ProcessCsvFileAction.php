@@ -5,8 +5,7 @@ namespace App\Actions;
 use App\DTO\PersonDTO;
 use App\Services\NameParserService;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\LazyCollection;
 
 class ProcessCsvFileAction
 {
@@ -15,55 +14,37 @@ class ProcessCsvFileAction
     ) {}
 
     /**
-     * Process an uploaded CSV file and parse names.
+     * Process an uploaded CSV file using Lazy Collections.
      *
-     * @return Collection<int, PersonDTO>
-     *
-     * @throws \RuntimeException
+     * @return LazyCollection<int, PersonDTO>
      */
-    public function execute(UploadedFile $file): Collection
+    public function execute(UploadedFile $file): LazyCollection
     {
-        try {
-            $path = $file->getRealPath();
-            
-            if ($path === false) {
-                throw new \RuntimeException('Unable to get the file path.');
+        $path = $file->getRealPath();
+        return LazyCollection::make(function () use ($path) {
+            $handle = fopen($path, 'r');
+
+            if ($handle === false) {
+                throw new \RuntimeException("Cannot open file: {$path}");
             }
 
-            $data = array_map('str_getcsv', file($path));
-            
-            if (empty($data)) {
-                Log::warning('CSV file is empty', ['filename' => $file->getClientOriginalName()]);
-                return collect();
-            }
+            // skipping header
+            fgetcsv($handle);
 
-            // Extract rows, skipping header
-            $rows = array_column(array_slice($data, 1), 0);
+            try {
+                while (($row = fgetcsv($handle)) !== false) {
+                    if (!isset($row[0]) || trim($row[0]) === '') {
+                        continue;
+                    }
 
-            $results = collect();
-
-            foreach ($rows as $row) {
-                if (empty(trim($row))) {
-                    continue;
+                    yield $row[0];
                 }
-
-                $parsedNames = $this->nameParser->parse($row);
-                $results = $results->concat($parsedNames);
+            } finally {
+                fclose($handle);
             }
-
-            Log::info('CSV file processed successfully', [
-                'filename' => $file->getClientOriginalName(),
-                'records_count' => $results->count(),
-            ]);
-
-            return $results;
-
-        } catch (\Exception $e) {
-            Log::error('Error processing CSV file', [
-                'filename' => $file->getClientOriginalName(),
-                'error' => $e->getMessage(),
-            ]);
-            throw $e;
-        }
+        })
+            ->flatMap(function (string $rowValue) {
+                return $this->nameParser->parse($rowValue);
+            });
     }
 }

@@ -45,30 +45,32 @@ CSV;
 
         $file = UploadedFile::fake()->createWithContent('homeowners.csv', $csvContent);
 
-        $result = $this->action->execute($file);
+        $result = $this->action->execute($file)
+            ->map(fn($dto) => $dto->jsonSerialize())
+            ->toArray();
 
         // Should parse multiple individuals
-        $this->assertGreaterThan(16, $result->count());
+        $this->assertGreaterThan(16, count($result));
 
         // Verify some parsed entries
-        $this->assertTrue($result->contains(function ($dto) {
-            return $dto->title === 'Mr' && $dto->first_name === 'John' && $dto->last_name === 'Smith';
+        $this->assertTrue(collect($result)->contains(function ($dto) {
+            return $dto['title'] === 'Mr' && $dto['first_name'] === 'John' && $dto['last_name'] === 'Smith';
         }));
 
-        $this->assertTrue($result->contains(function ($dto) {
-            return $dto->title === 'Mrs' && $dto->first_name === 'Jane' && $dto->last_name === 'Smith';
+        $this->assertTrue(collect($result)->contains(function ($dto) {
+            return $dto['title'] === 'Mrs' && $dto['first_name'] === 'Jane' && $dto['last_name'] === 'Smith';
         }));
 
-        $this->assertTrue($result->contains(function ($dto) {
-            return $dto->title === 'Mister' && $dto->first_name === 'John' && $dto->last_name === 'Doe';
+        $this->assertTrue(collect($result)->contains(function ($dto) {
+            return $dto['title'] === 'Mister' && $dto['first_name'] === 'John' && $dto['last_name'] === 'Doe';
         }));
 
-        $this->assertTrue($result->contains(function ($dto) {
-            return $dto->title === 'Ms' && $dto->first_name === 'Claire' && $dto->last_name === 'Robbo';
+        $this->assertTrue(collect($result)->contains(function ($dto) {
+            return $dto['title'] === 'Ms' && $dto['first_name'] === 'Claire' && $dto['last_name'] === 'Robbo';
         }));
 
-        $this->assertTrue($result->contains(function ($dto) {
-            return $dto->title === 'Dr' && $dto->initial === 'P' && $dto->last_name === 'Gunn';
+        $this->assertTrue(collect($result)->contains(function ($dto) {
+            return $dto['title'] === 'Dr' && $dto['initial'] === 'P' && $dto['last_name'] === 'Gunn';
         }));
     }
 
@@ -85,10 +87,12 @@ CSV;
 
         $file = UploadedFile::fake()->createWithContent('multi.csv', $csvContent);
 
-        $result = $this->action->execute($file);
+        $result = $this->action->execute($file)
+            ->map(fn($dto) => $dto->jsonSerialize())
+            ->toArray();
 
         // Should parse at least 5 individuals (2+2+2)
-        $this->assertGreaterThanOrEqual(5, $result->count());
+        $this->assertGreaterThanOrEqual(5, count($result));
     }
 
     public function test_process_csv_with_all_title_variations(): void
@@ -108,17 +112,19 @@ CSV;
 
         $file = UploadedFile::fake()->createWithContent('titles.csv', $csvContent);
 
-        $result = $this->action->execute($file);
+        $result = $this->action->execute($file)
+            ->map(fn($dto) => $dto->jsonSerialize())
+            ->toArray();
 
         $this->assertCount(7, $result);
 
         // Verify all titles are normalized
-        $this->assertTrue($result->every(function ($dto) {
-            return $dto->title !== null;
+        $this->assertTrue(collect($result)->every(function ($dto) {
+            return $dto['title'] !== null;
         }));
 
         // Verify titles are properly capitalized
-        $titles = $result->map(fn ($dto) => $dto->title)->unique()->toArray();
+        $titles = collect($result)->map(fn ($dto) => $dto['title'])->unique()->toArray();
         $this->assertContains('Mr', $titles);
         $this->assertContains('Mrs', $titles);
         $this->assertContains('Miss', $titles);
@@ -142,18 +148,20 @@ CSV;
 
         $file = UploadedFile::fake()->createWithContent('initials.csv', $csvContent);
 
-        $result = $this->action->execute($file);
+        $result = $this->action->execute($file)
+            ->map(fn($dto) => $dto->jsonSerialize())
+            ->toArray();
 
         $this->assertCount(4, $result);
 
         // All should have initials
-        $this->assertTrue($result->every(function ($dto) {
-            return $dto->initial !== null;
+        $this->assertTrue(collect($result)->every(function ($dto) {
+            return $dto['initial'] !== null;
         }));
 
         // Initials should be single letter without dots
-        $this->assertTrue($result->every(function ($dto) {
-            return strlen($dto->initial) === 1;
+        $this->assertTrue(collect($result)->every(function ($dto) {
+            return strlen($dto['initial']) === 1;
         }));
     }
 
@@ -170,13 +178,15 @@ CSV;
 
         $file = UploadedFile::fake()->createWithContent('complex.csv', $csvContent);
 
-        $result = $this->action->execute($file);
+        $result = $this->action->execute($file)
+            ->map(fn($dto) => $dto->jsonSerialize())
+            ->toArray();
 
         $this->assertCount(3, $result);
 
         // Verify hyphenated names are preserved
-        $complex = $result->filter(function ($dto) {
-            return str_contains($dto->last_name ?? '', '-');
+        $complex = collect($result)->filter(function ($dto) {
+            return str_contains($dto['last_name'] ?? '', '-');
         });
 
         $this->assertGreaterThanOrEqual(1, $complex->count());
@@ -196,7 +206,7 @@ CSV
 
         $response->assertRedirect(route('names.index'));
         $response->assertSessionHas('results', function ($results) {
-            return $results->count() >= 3;
+            return is_array($results) && count($results) >= 3;
         });
     }
 }

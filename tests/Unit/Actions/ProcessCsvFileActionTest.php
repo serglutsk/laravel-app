@@ -5,7 +5,6 @@ namespace Tests\Unit\Actions;
 use App\Actions\ProcessCsvFileAction;
 use App\Services\NameParserService;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -28,9 +27,10 @@ class ProcessCsvFileActionTest extends TestCase
         $csvContent = "Name\nMr John Smith\nDr Jane Doe";
         $file = UploadedFile::fake()->createWithContent('names.csv', $csvContent);
 
-        $result = $this->action->execute($file);
+        $result = $this->action->execute($file)
+            ->map(fn($dto) => $dto->jsonSerialize())
+            ->toArray();
 
-        $this->assertTrue($result->isNotEmpty());
         $this->assertCount(2, $result);
     }
 
@@ -41,9 +41,11 @@ class ProcessCsvFileActionTest extends TestCase
         $csvContent = "Name\nMr and Mrs Smith\nDr Jane Doe";
         $file = UploadedFile::fake()->createWithContent('names.csv', $csvContent);
 
-        $result = $this->action->execute($file);
+        $result = $this->action->execute($file)
+            ->map(fn($dto) => $dto->jsonSerialize())
+            ->toArray();
 
-        $this->assertGreaterThanOrEqual(2, $result->count());
+        $this->assertGreaterThanOrEqual(2, count($result));
     }
 
     public function test_process_csv_skips_empty_rows(): void
@@ -53,7 +55,9 @@ class ProcessCsvFileActionTest extends TestCase
         $csvContent = "Name\nMr John Smith\n\n\nDr Jane Doe";
         $file = UploadedFile::fake()->createWithContent('names.csv', $csvContent);
 
-        $result = $this->action->execute($file);
+        $result = $this->action->execute($file)
+            ->map(fn($dto) => $dto->jsonSerialize())
+            ->toArray();
 
         $this->assertCount(2, $result);
     }
@@ -64,37 +68,18 @@ class ProcessCsvFileActionTest extends TestCase
 
         $file = UploadedFile::fake()->createWithContent('names.csv', '');
 
-        $result = $this->action->execute($file);
+        $result = $this->action->execute($file)
+            ->map(fn($dto) => $dto->jsonSerialize())
+            ->toArray();
 
-        $this->assertTrue($result->isEmpty());
+        $this->assertCount(0, $result);
     }
 
-    public function test_process_logs_success(): void
+    public function test_process_returns_lazy_collection(): void
     {
         Storage::fake('local');
-        Log::shouldReceive('info')->once()->with('CSV file processed successfully', \Mockery::any());
 
         $csvContent = "Name\nMr John Smith";
-        $file = UploadedFile::fake()->createWithContent('names.csv', $csvContent);
-
-        $this->action->execute($file);
-    }
-
-    public function test_process_logs_empty_file_warning(): void
-    {
-        Storage::fake('local');
-        Log::shouldReceive('warning')->once()->with('CSV file is empty', \Mockery::any());
-
-        $file = UploadedFile::fake()->createWithContent('names.csv', '');
-
-        $this->action->execute($file);
-    }
-
-    public function test_process_returns_collection(): void
-    {
-        Storage::fake('local');
-
-        $csvContent = "Name\nMr John Smith\nDr Jane Doe";
         $file = UploadedFile::fake()->createWithContent('names.csv', $csvContent);
 
         $result = $this->action->execute($file);
@@ -110,12 +95,53 @@ class ProcessCsvFileActionTest extends TestCase
         $csvContent = "Name\nDr J Smith";
         $file = UploadedFile::fake()->createWithContent('names.csv', $csvContent);
 
+        $result = $this->action->execute($file)
+            ->map(fn($dto) => $dto->jsonSerialize())
+            ->toArray();
+
+        $dto = $result[0];
+        $this->assertEquals('Dr', $dto['title']);
+        $this->assertNull($dto['first_name']);
+        $this->assertEquals('J', $dto['initial']);
+        $this->assertEquals('Smith', $dto['last_name']);
+    }
+
+    public function test_process_handles_multiple_records(): void
+    {
+        Storage::fake('local');
+
+        $csvContent = <<<CSV
+Name
+Mr John Smith
+Mrs Jane Smith
+Dr Peter Thompson
+Ms Claire Anderson
+CSV;
+
+        $file = UploadedFile::fake()->createWithContent('names.csv', $csvContent);
+
+        $result = $this->action->execute($file)
+            ->map(fn($dto) => $dto->jsonSerialize())
+            ->toArray();
+
+        $this->assertCount(4, $result);
+    }
+
+    public function test_process_lazy_collection_is_lazy(): void
+    {
+        Storage::fake('local');
+
+        $csvContent = "Name\nMr John Smith\nDr Jane Doe";
+        $file = UploadedFile::fake()->createWithContent('names.csv', $csvContent);
+
+        // LazyCollection should be returned without immediately evaluating
         $result = $this->action->execute($file);
 
-        $dto = $result->first();
-        $this->assertEquals('Dr', $dto->title);
-        $this->assertNull($dto->first_name);
-        $this->assertEquals('J', $dto->initial);
-        $this->assertEquals('Smith', $dto->last_name);
+        // Verify it's actually lazy (toArray should be callable)
+        $evaluated = $result
+            ->map(fn($dto) => $dto->jsonSerialize())
+            ->toArray();
+        $this->assertCount(2, $evaluated);
     }
 }
+

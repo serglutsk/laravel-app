@@ -80,7 +80,7 @@ class HomeownerControllerTest extends TestCase
         ]);
 
         $response->assertSessionHas('results', function ($results) {
-            return count($results) > 0;
+            return is_array($results) && count($results) > 0;
         });
     }
 
@@ -97,7 +97,7 @@ class HomeownerControllerTest extends TestCase
 
         $response->assertRedirect(route('names.index'));
         $response->assertSessionHas('results', function ($results) {
-            return $results->count() >= 3;
+            return is_array($results) && count($results) >= 3;
         });
     }
 

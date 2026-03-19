@@ -35,11 +35,17 @@ class HomeownerController extends Controller
     public function upload(UploadCsvRequest $request): RedirectResponse
     {
         $results = $this->csvProcessor->execute($request->file('file'));
+        
+        // Convert DTOs to serializable arrays
+        $serializedResults = $results
+            ->map(fn ($dto) => $dto->jsonSerialize())
+            ->toArray();
+        
         return redirect()
             ->route('names.index')
             ->with([
-                'success'=>'parser.success_message',
-                'results' => $results,
+                'success' => 'parser.success_message',
+                'results' => $serializedResults,
             ]);
     }
 }
